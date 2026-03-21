@@ -4,28 +4,62 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.utils import timezone
 from datetime import datetime
-from django.db.models import Sum
 
 
-# 🔥 SERVICE LIST
 def service_list(request):
-    category = request.GET.get('category')
-    query = request.GET.get('q')
+
+    # 🔥 SAFE INSERT (NO DELETE)
+    if not Service.objects.exists():
+
+        services_data = [
+            ("General Checkup", "doctor", "Doctor", "Basic health consultation", 30, 500),
+
+            ("Haircut", "salon", "Salon", "Stylish haircut", 30, 120),
+            ("Hair Spa", "salon", "Salon", "Hair spa treatment", 45, 600),
+            ("Beard Trim", "salon", "Salon", "Beard grooming", 20, 80),
+
+            ("Career Guidance", "consult", "Consultancy", "Career advice", 60, 500),
+            ("Business Consulting", "consult", "Consultancy", "Business advice", 60, 1500),
+            ("Legal Advice", "consult", "Consultancy", "Legal consultation", 45, 800),
+            ("Fitness Coaching", "consult", "Consultancy", "Fitness guidance", 45, 500),
+        ]
+
+        for name, category, sub, desc, dur, price in services_data:
+            Service.objects.create(
+                name=name,
+                category=category,
+                sub_category=sub,
+                description=desc,
+                duration=dur,
+                price=price
+            )
+
+    # 🔥 TIMESLOTS (SAFE)
+    if not TimeSlot.objects.exists():
+
+        slots = [
+            ("10:00","10:30"), ("10:30","11:00"),
+            ("11:00","11:30"), ("11:30","12:00"),
+            ("12:00","12:30"), ("12:30","01:00"),
+            ("01:00","01:30"), ("01:30","02:00"),
+            ("02:00","02:30"), ("02:30","03:00"),
+            ("03:00","03:30"), ("03:30","04:00"),
+            ("04:00","04:30"), ("04:30","05:00"),
+            ("05:00","05:30"), ("05:30","06:00"),
+            ("06:00","06:30"), ("06:30","07:00"),
+            ("07:00","07:30"), ("07:30","08:00"),
+        ]
+
+        for s, e in slots:
+            TimeSlot.objects.create(start_time=s, end_time=e)
 
     services = Service.objects.all()
-
-    if category:
-        services = services.filter(category=category)
-
-    if query:
-        services = services.filter(name__icontains=query)
 
     return render(request, 'appointments/service_list.html', {
         'services': services
     })
 
-
-# 🔥 BOOK APPOINTMENT
+# 🔥 BOOK APPOINTMENT (FIXED FULL LOGIC)
 def book_appointment(request, service_id):
 
     if not request.user.is_authenticated:
@@ -43,11 +77,13 @@ def book_appointment(request, service_id):
     if selected_date:
         selected_date_obj = datetime.strptime(selected_date, "%Y-%m-%d").date()
 
+        # booked slots
         booked_slots = Appointment.objects.filter(
             date=selected_date_obj,
             service=service
         ).values_list('time_slot_id', flat=True)
 
+        # past time disable
         if selected_date_obj == now.date():
             for slot in time_slots:
                 slot_time = datetime.combine(now.date(), slot.start_time)
@@ -56,7 +92,9 @@ def book_appointment(request, service_id):
                 if slot_time < now:
                     disabled_slots.append(slot.id)
 
+    # 🔥 POST FIX (booking issue fix)
     if request.method == 'POST':
+
         date = request.POST.get('date')
         time_slot_id = request.POST.get('time_slot')
 
@@ -66,13 +104,12 @@ def book_appointment(request, service_id):
         date_obj = datetime.strptime(date, "%Y-%m-%d").date()
         time_slot = get_object_or_404(TimeSlot, id=time_slot_id)
 
-        exists = Appointment.objects.filter(
+        # double booking protection
+        if Appointment.objects.filter(
             date=date_obj,
             time_slot=time_slot,
             service=service
-        ).exists()
-
-        if exists:
+        ).exists():
             return redirect(request.path + f'?date={date}')
 
         appointment = Appointment.objects.create(
@@ -92,17 +129,13 @@ def book_appointment(request, service_id):
     })
 
 
-# 🔥 PAYMENT PAGE
+# 🔥 PAYMENT
 def payment_page(request, appointment_id):
-
     appointment = get_object_or_404(Appointment, id=appointment_id)
 
     if request.method == 'POST':
-        payment_type = request.POST.get('payment_type')
-
-        appointment.payment_type = payment_type
+        appointment.payment_type = request.POST.get('payment_type')
         appointment.save()
-
         return redirect(f'/success/{appointment.id}/')
 
     return render(request, 'appointments/payment.html', {
@@ -110,7 +143,6 @@ def payment_page(request, appointment_id):
     })
 
 
-# 🔥 PAYMENT SUCCESS
 def payment_success(request, appointment_id):
     appointment = get_object_or_404(Appointment, id=appointment_id)
     return render(request, 'appointments/payment_success.html', {
@@ -118,18 +150,17 @@ def payment_success(request, appointment_id):
     })
 
 
-# 🔥 MY BOOKINGS
+# 🔥 BOOKINGS
 def my_bookings(request):
     if not request.user.is_authenticated:
         return redirect('/login/')
-
     appointments = Appointment.objects.filter(user=request.user)
     return render(request, 'appointments/my_bookings.html', {
         'appointments': appointments
     })
 
 
-# 🔥 CANCEL BOOKING
+# 🔥 CANCEL
 def cancel_booking(request, appointment_id):
     appointment = get_object_or_404(Appointment, id=appointment_id)
 
@@ -140,7 +171,36 @@ def cancel_booking(request, appointment_id):
     return redirect('/my-bookings/')
 
 
-# 🔥 LOGIN
+# 🔥 ADMIN DASHBOARD
+def admin_dashboard(request):
+
+    if not request.user.is_authenticated:
+        return redirect('/login/')
+
+    if not request.user.is_staff:
+        return redirect('/')
+
+    return render(request, 'appointments/admin_dashboard.html', {
+        'total_services': Service.objects.count(),
+        'total_appointments': Appointment.objects.count(),
+        'total_users': User.objects.count(),
+    })
+
+
+# 🔥 RESET BOOKINGS
+def reset_bookings(request):
+
+    if not request.user.is_authenticated:
+        return redirect('/login/')
+
+    if not request.user.is_staff:
+        return redirect('/')
+
+    Appointment.objects.all().delete()
+    return redirect('/admin-dashboard/')
+
+
+# 🔥 AUTH
 def user_login(request):
     if request.method == 'POST':
         user = authenticate(
@@ -154,7 +214,6 @@ def user_login(request):
     return render(request, 'appointments/login.html')
 
 
-# 🔥 SIGNUP
 def user_signup(request):
     if request.method == 'POST':
         user = User.objects.create_user(
@@ -166,46 +225,6 @@ def user_signup(request):
     return render(request, 'appointments/signup.html')
 
 
-# 🔥 LOGOUT
 def user_logout(request):
     logout(request)
     return redirect('/')
-
-
-# ================================
-# 🚀 ADMIN DASHBOARD (NEW)
-# ================================
-def admin_dashboard(request):
-
-    # ❗ OPTIONAL: सिर्फ admin access
-    if not request.user.is_superuser:
-        return redirect('/')
-
-    today = timezone.localdate()
-
-    total_bookings = Appointment.objects.count()
-
-    today_bookings = Appointment.objects.filter(date=today).count()
-
-    # 💰 revenue = only online payments
-    total_revenue = sum(
-        a.service.price
-        for a in Appointment.objects.filter(payment_type='online')
-    )
-
-    recent_bookings = Appointment.objects.select_related('service', 'user').order_by('-id')[:10]
-
-    return render(request, 'appointments/admin_dashboard.html', {
-        'total_bookings': total_bookings,
-        'today_bookings': today_bookings,
-        'total_revenue': total_revenue,
-        'recent_bookings': recent_bookings,
-    })
-def reset_bookings(request):
-
-    if not request.user.is_superuser:
-        return redirect('/')
-
-    Appointment.objects.all().delete()
-
-    return redirect('/admin-dashboard/')
