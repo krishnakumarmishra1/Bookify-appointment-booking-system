@@ -39,3 +39,7 @@ git clone https://github.com/krishnakumarmishra1/Bookify-appointment-booking-sys
 cd Bookify-appointment-booking-system
 pip install -r requirements.txt
 python manage.py runserver
+
+
+Author
+Krishna Kumar Mishra
