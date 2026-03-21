@@ -1,0 +1,88 @@
+{% extends 'appointments/base.html' %}
+{% block content %}
+
+<h4 class="mb-4 text-center">My Bookings</h4>
+
+<div class="card p-4 shadow">
+
+{% if appointments %}
+
+<table class="table table-striped text-center">
+
+<thead class="table-dark">
+<tr>
+    <th>Service</th>
+    <th>Date</th>
+    <th>Time</th>
+    <th>Payment</th>
+    <th>Status</th>
+    <th>Action</th>
+</tr>
+</thead>
+
+<tbody>
+
+{% for a in appointments %}
+<tr>
+
+<td>{{ a.service.name }}</td>
+
+<td>{{ a.date }}</td>
+
+<td>
+{{ a.time_slot.start_time|time:"h:i A" }} -
+{{ a.time_slot.end_time|time:"h:i A" }}
+</td>
+
+<td>
+{% if a.payment_type == 'cash' %}
+<span class="badge bg-warning text-dark">Cash</span>
+{% else %}
+<span class="badge bg-success">Online</span>
+{% endif %}
+</td>
+
+<td>
+{% if a.status == 'upcoming' %}
+<span class="badge bg-primary">Upcoming</span>
+{% elif a.status == 'completed' %}
+<span class="badge bg-success">Completed</span>
+{% elif a.status == 'cancelled' %}
+<span class="badge bg-danger">Cancelled</span>
+{% endif %}
+</td>
+
+<td>
+
+<!-- 🔥 FINAL CANCEL LOGIC -->
+
+{% if a.status == 'upcoming' and a.payment_type == 'cash' %}
+    <a href="/cancel/{{ a.id }}/" class="btn btn-danger btn-sm">
+        Cancel
+    </a>
+
+{% elif a.payment_type == 'online' %}
+    <span class="text-muted">Paid (No Cancel)</span>
+
+{% else %}
+    <span class="text-muted">N/A</span>
+{% endif %}
+
+</td>
+
+</tr>
+{% endfor %}
+
+</tbody>
+
+</table>
+
+{% else %}
+
+<h5 class="text-center">No bookings yet 😢</h5>
+
+{% endif %}
+
+</div>
+
+{% endblock %}

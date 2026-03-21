@@ -1,0 +1,72 @@
+{% extends 'appointments/base.html' %}
+{% block content %}
+
+<div class="row justify-content-center">
+
+<div class="col-md-6">
+
+<div class="card shadow-lg p-4 text-center" style="border-radius:20px;">
+
+<h4 class="mb-3">Complete Your Booking</h4>
+
+<h5 class="fw-bold">{{ appointment.service.name }}</h5>
+<p class="text-muted">{{ appointment.date }}</p>
+
+<div class="mb-3">
+<span class="badge bg-success fs-6">₹{{ appointment.service.price }}</span>
+</div>
+
+<hr>
+
+<!-- 🔥 PAYMENT OPTIONS -->
+
+<form method="POST">
+{% csrf_token %}
+
+<div class="text-start mb-3">
+
+<!-- CASH -->
+<label class="form-check p-3 border rounded mb-2 payment-option">
+    <input class="form-check-input" type="radio" name="payment_type" value="cash" checked>
+    <span class="ms-2 fw-bold">Pay at Venue</span>
+    <small class="d-block text-muted">Cash payment after service</small>
+</label>
+
+<!-- ONLINE -->
+<label class="form-check p-3 border rounded payment-option">
+    <input class="form-check-input" type="radio" name="payment_type" value="online">
+    <span class="ms-2 fw-bold">UPI / Card / Net Banking</span>
+    <small class="d-block text-muted">Secure online payment</small>
+</label>
+
+</div>
+
+<button class="btn btn-success w-100 py-2">
+Confirm & Continue
+</button>
+
+</form>
+
+</div>
+
+</div>
+
+</div>
+
+<style>
+
+/* 🔥 HOVER EFFECT */
+.payment-option {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.payment-option:hover {
+    background: rgba(255,255,255,0.05);
+    transform: scale(1.02);
+}
+
+
+</style>
+
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends 'appointments/base.html' %}
+{% block content %}
+
+<div class="col-md-5 mx-auto card p-4 shadow-sm">
+
+<h5 class="mb-3">{{ service.name }}</h5>
+
+<form method="GET">
+<input type="date" name="date" class="form-control mb-3" required id="dateInput">
+<button class="btn btn-outline-dark w-100 mb-3">Check Availability</button>
+</form>
+
+{% if request.GET.date %}
+
+<form method="POST">
+{% csrf_token %}
+
+<input type="hidden" name="date" value="{{ request.GET.date }}">
+
+<label class="mb-2 fw-bold">Booking Time</label>
+
+<select name="time_slot" class="form-control mb-3">
+
+{% for slot in time_slots %}
+
+{% if slot.id in booked_slots or slot.id in disabled_slots %}
+<option disabled>
+{{ slot.start_time|time:"h:i A" }} - {{ slot.end_time|time:"h:i A" }} (Full)
+</option>
+{% else %}
+<option value="{{ slot.id }}">
+{{ slot.start_time|time:"h:i A" }} - {{ slot.end_time|time:"h:i A" }}
+</option>
+{% endif %}
+
+{% endfor %}
+
+</select>
+
+<button class="btn btn-dark w-100">
+Confirm Booking
+</button>
+
+</form>
+
+{% endif %}
+
+</div>
+
+<script>
+let today = new Date().toISOString().split("T")[0];
+document.getElementById("dateInput").setAttribute("min", today);
+</script>
+
+{% endblock %}

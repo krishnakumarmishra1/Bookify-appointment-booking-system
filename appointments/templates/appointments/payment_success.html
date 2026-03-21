@@ -1,0 +1,30 @@
+{% extends 'appointments/base.html' %}
+{% block content %}
+
+<div class="col-md-5 mx-auto card p-4 shadow text-center">
+
+<h4 class="text-success">Payment Successful</h4>
+
+<p class="mt-3">{{ appointment.service.name }}</p>
+
+<div class="alert alert-success mt-3">
+✔ Booking Confirmed
+</div>
+
+<p><b>Amount:</b> ₹{{ appointment.service.price }}</p>
+
+<div class="mt-4 d-flex justify-content-between">
+
+<a href="/my-bookings/" class="btn btn-outline-dark">
+My Bookings
+</a>
+
+<a href="/" class="btn btn-dark">
+Book Another
+</a>
+
+</div>
+
+</div>
+
+{% endblock %}

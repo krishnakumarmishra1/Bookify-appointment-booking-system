@@ -1,0 +1,74 @@
+{% extends 'appointments/base.html' %}
+{% block content %}
+
+<h4 class="mb-4">Explore Services</h4>
+
+<div class="mb-4 text-center">
+    <a href="/" class="btn btn-outline-light btn-sm">All</a>
+    <a href="?category=doctor" class="btn btn-outline-info btn-sm">Doctor</a>
+    <a href="?category=salon" class="btn btn-outline-warning btn-sm">Salon</a>
+    <a href="?category=consult" class="btn btn-outline-success btn-sm">Consultancy</a>
+</div>
+
+<div class="row">
+
+{% for s in services %}
+<div class="col-md-4 mb-4">
+
+<div class="card shadow">
+
+<!-- 🔒 LOCKED IMAGES -->
+
+{% if "Haircut" in s.name %}
+<img src="https://images.unsplash.com/photo-1585747860715-2ba37e788b70">
+
+{% elif "Hair Spa" in s.name %}
+<img src="https://images.unsplash.com/photo-1580618672591-eb180b1a973f">
+
+{% elif "Beard" in s.name %}
+<img src="https://images.unsplash.com/photo-1599351431202-1e0f0137899a">
+
+{% elif "Checkup" in s.name %}
+<img src="https://images.unsplash.com/photo-1588776814546-1ffcf47267a5">
+
+{% elif "Career" in s.name %}
+<img src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d">
+
+{% elif "Business" in s.name %}
+<img src="https://images.unsplash.com/photo-1556761175-5973dc0f32e7">
+
+{% elif "Legal" in s.name %}
+<img src="https://images.unsplash.com/photo-1589829545856-d10d557cf95f">
+
+{% elif "Fitness" in s.name %}
+<img src="https://images.unsplash.com/photo-1554284126-aa88f22d8b74">
+
+{% else %}
+<img src="https://images.unsplash.com/photo-1507679799987-c73779587ccf">
+{% endif %}
+
+<div class="card-body">
+
+<h6 class="fw-bold">{{ s.name }}</h6>
+<small class="text-muted">{{ s.sub_category }}</small>
+
+<p class="small mt-2">{{ s.description }}</p>
+
+<div class="d-flex justify-content-between align-items-center">
+<span class="fw-bold text-success">₹{{ s.price }}</span>
+
+<a href="/book/{{ s.id }}/" class="btn btn-dark btn-sm">
+Book
+</a>
+</div>
+
+</div>
+
+</div>
+
+</div>
+{% endfor %}
+
+</div>
+
+{% endblock %}
