@@ -4,33 +4,107 @@
 
 <h3 class="text-center mb-4">Admin Dashboard</h3>
 
+<!-- 🔥 TOP CARDS -->
 <div class="row text-center">
 
-<div class="col-md-4">
-<div class="card p-4">
-<h5>Total Services</h5>
-<h2>{{ total_services }}</h2>
-</div>
+    <div class="col-md-3">
+        <div class="card p-4">
+            <h5>Total Services</h5>
+            <h2>{{ total_services }}</h2>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card p-4">
+            <h5>Total Bookings</h5>
+            <h2>{{ total_appointments }}</h2>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card p-4">
+            <h5>Total Users</h5>
+            <h2>{{ total_users }}</h2>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card p-4">
+            <h5>Total Revenue</h5>
+            <h2 class="text-success">₹{{ total_revenue }}</h2>
+        </div>
+    </div>
+
 </div>
 
-<div class="col-md-4">
-<div class="card p-4">
-<h5>Total Bookings</h5>
-<h2>{{ total_appointments }}</h2>
-</div>
-</div>
-
-<div class="col-md-4">
-<div class="card p-4">
-<h5>Total Users</h5>
-<h2>{{ total_users }}</h2>
-</div>
+<!-- 🔥 RESET BUTTON -->
+<div class="text-center">
+    <a href="/reset-bookings/" class="btn btn-danger mt-4">
+        Reset All Bookings
+    </a>
 </div>
 
-</div>
+<hr class="my-5">
 
-<a href="/reset-bookings/" class="btn btn-danger mt-4">
-Reset All Bookings
-</a>
+<!-- 🔥 BOOKINGS TABLE -->
+<h4 class="text-center mb-3">All Bookings</h4>
+
+<div class="card p-3 shadow">
+
+{% if appointments %}
+
+<table class="table table-striped text-center">
+    <thead class="table-dark">
+        <tr>
+            <th>User</th>
+            <th>Service</th>
+            <th>Date</th>
+            <th>Time</th>
+            <th>Payment</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for a in appointments %}
+        <tr>
+            <td>{{ a.user.username }}</td>
+            <td>{{ a.service.name }}</td>
+            <td>{{ a.date }}</td>
+
+            <td>
+                {{ a.time_slot.start_time|time:"h:i A" }} -
+                {{ a.time_slot.end_time|time:"h:i A" }}
+            </td>
+
+            <td>
+                {% if a.payment_type == 'cash' %}
+                    <span class="badge bg-warning text-dark">Cash</span>
+                {% else %}
+                    <span class="badge bg-success">Online</span>
+                {% endif %}
+            </td>
+
+            <td>
+                {% if a.status == 'upcoming' %}
+                    <span class="badge bg-primary">Upcoming</span>
+                {% elif a.status == 'completed' %}
+                    <span class="badge bg-success">Completed</span>
+                {% elif a.status == 'cancelled' %}
+                    <span class="badge bg-danger">Cancelled</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% else %}
+
+<p class="text-center text-danger">No bookings found 😢</p>
+
+{% endif %}
+
+</div>
 
 {% endblock %}

@@ -8,16 +8,13 @@ from datetime import datetime
 
 def service_list(request):
 
-    # 🔥 SAFE INSERT (NO DELETE)
+    # 🔥 SERVICES AUTO INSERT (ONLY FIRST TIME)
     if not Service.objects.exists():
-
         services_data = [
             ("General Checkup", "doctor", "Doctor", "Basic health consultation", 30, 500),
-
             ("Haircut", "salon", "Salon", "Stylish haircut", 30, 120),
             ("Hair Spa", "salon", "Salon", "Hair spa treatment", 45, 600),
             ("Beard Trim", "salon", "Salon", "Beard grooming", 20, 80),
-
             ("Career Guidance", "consult", "Consultancy", "Career advice", 60, 500),
             ("Business Consulting", "consult", "Consultancy", "Business advice", 60, 1500),
             ("Legal Advice", "consult", "Consultancy", "Legal consultation", 45, 800),
@@ -34,26 +31,33 @@ def service_list(request):
                 price=price
             )
 
-    # 🔥 TIMESLOTS (SAFE)
+    # 🔥 TIMESLOTS FIX (10 AM → 8 PM, 30 mins gap)
     if not TimeSlot.objects.exists():
+        from datetime import time
 
-        slots = [
-            ("10:00","10:30"), ("10:30","11:00"),
-            ("11:00","11:30"), ("11:30","12:00"),
-            ("12:00","12:30"), ("12:30","01:00"),
-            ("01:00","01:30"), ("01:30","02:00"),
-            ("02:00","02:30"), ("02:30","03:00"),
-            ("03:00","03:30"), ("03:30","04:00"),
-            ("04:00","04:30"), ("04:30","05:00"),
-            ("05:00","05:30"), ("05:30","06:00"),
-            ("06:00","06:30"), ("06:30","07:00"),
-            ("07:00","07:30"), ("07:30","08:00"),
-        ]
+        start_hour = 10
+        end_hour = 20  # 8 PM
 
-        for s, e in slots:
-            TimeSlot.objects.create(start_time=s, end_time=e)
+        for hour in range(start_hour, end_hour):
+            # 00 → 30
+            TimeSlot.objects.create(
+                start_time=time(hour, 0),
+                end_time=time(hour, 30)
+            )
 
-    services = Service.objects.all()
+            # 30 → next hour 00
+            TimeSlot.objects.create(
+                start_time=time(hour, 30),
+                end_time=time(hour + 1, 0)
+            )
+
+    # 🔥 CATEGORY FILTER FIX
+    category = request.GET.get('category')
+
+    if category:
+        services = Service.objects.filter(category=category)
+    else:
+        services = Service.objects.all()
 
     return render(request, 'appointments/service_list.html', {
         'services': services
@@ -172,21 +176,26 @@ def cancel_booking(request, appointment_id):
 
 
 # 🔥 ADMIN DASHBOARD
-def admin_dashboard(request):
+from django.db.models import Sum
 
+def admin_dashboard(request):
     if not request.user.is_authenticated:
         return redirect('/login/')
-
     if not request.user.is_staff:
         return redirect('/')
+
+    appointments = Appointment.objects.select_related('user', 'service', 'time_slot').all().order_by('-id')
+
+    # 🔥 TOTAL REVENUE CALCULATION
+    total_revenue = sum([a.service.price for a in appointments if a.status != 'cancelled'])
 
     return render(request, 'appointments/admin_dashboard.html', {
         'total_services': Service.objects.count(),
         'total_appointments': Appointment.objects.count(),
         'total_users': User.objects.count(),
+        'appointments': appointments,
+        'total_revenue': total_revenue
     })
-
-
 # 🔥 RESET BOOKINGS
 def reset_bookings(request):
 
